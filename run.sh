@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "=== Compilador e Executor P2P ==="
+echo "=== Compartilhador de arquivos ==="
 echo "1 - Iniciar servidor"
 echo "2 - Iniciar cliente"
 echo "3 - Sair"

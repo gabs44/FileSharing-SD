@@ -21,7 +21,7 @@ def get_local_ip():
 
 def connect_to_server():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((SERVER_IP, 1234))
+    s.connect((SERVER_IP, 1234)) 
     my_ip = get_local_ip()
     s.sendall(f"JOIN {my_ip}\n".encode())
     print(s.recv(1024).decode().strip())
@@ -35,10 +35,10 @@ def connect_to_server():
 
 def handle_file_requests():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('0.0.0.0', 1235))
+        s.bind(('0.0.0.0', 1235)) #endereço IP local de todas as interfaces de rede
         s.listen()
         while True:
-            conn, addr = s.accept()
+            conn, addr = s.accept() #socket da conexão ativa com o outro cliente
             threading.Thread(target=send_file, args=(conn,)).start()
 
 def send_file(conn):
@@ -54,14 +54,14 @@ def send_file(conn):
             if len(offset_range) > 1 and offset_range[1].isdigit():
                 offset_end = int(offset_range[1])
             filepath = os.path.join(PUBLIC_FOLDER, filename)
-            if os.path.isfile(filepath):
-                with open(filepath, 'rb') as f:
-                    f.seek(offset_start)
+            if os.path.isfile(filepath): #verifica se o arquivo existe no disco
+                with open(filepath, 'rb') as f: #modo binário de leitura
+                    f.seek(offset_start) #move o ponteiro
                     if offset_end is not None:
                         data = f.read(offset_end - offset_start)
                     else:
                         data = f.read()
-                    conn.sendall(data)
+                    conn.sendall(data) #envia de volta os dados para quem fez o pedido
             else:
                 conn.sendall(b"")  # envia vazio se o arquivo não for encontrado
 
@@ -95,7 +95,7 @@ def download_file(ip, filename, offset_start=0, offset_end=None):
                 offset += f"{offset_end}"
             s.sendall(f"GET {filename} {offset}\n".encode())
             output_path = os.path.join(DOWNLOAD_FOLDER, filename)
-            with open(output_path, 'wb') as f:
+            with open(output_path, 'wb') as f: #modo binário de escrita
                 while True:
                     data = s.recv(4096)
                     if not data:
@@ -109,34 +109,49 @@ if __name__ == "__main__":
     threading.Thread(target=handle_file_requests, daemon=True).start()
     client_socket = connect_to_server()
 
-    while True:
-        cmd = input("Comando (SEARCH/DELETE/LEAVE/DOWNLOAD): ").strip()
-        if cmd.startswith("SEARCH"):
-            parts = cmd.split(maxsplit=1)
-            if len(parts) == 2:
-                search_file_on_server(client_socket, parts[1])
-            else:
-                print("Uso correto: SEARCH <termo>")
-        elif cmd.startswith("DELETE"):
-            parts = cmd.split(maxsplit=1)
-            if len(parts) == 2:
-                client_socket.sendall(f"DELETEFILE {parts[1]}\n".encode())
-                print(client_socket.recv(1024).decode().strip())
-            else:
-                print("Uso correto: DELETE <nome-do-arquivo>")
-        elif cmd == "LEAVE":
-            client_socket.sendall(b"LEAVE\n")
-            print(client_socket.recv(1024).decode().strip())
-            break
-        elif cmd.startswith("DOWNLOAD"):
-            parts = cmd.split()
-            if len(parts) >= 3:
-                ip = parts[1]
-                filename = parts[2]
-                offset_start = int(parts[3]) if len(parts) >= 4 else 0
-                offset_end = int(parts[4]) if len(parts) >= 5 else None
-                download_file(ip, filename, offset_start, offset_end)
-            else:
-                print("Uso correto: DOWNLOAD <ip> <arquivo> [inicio] [fim]")
+while True:
+    cmd = input(
+        "\n*************************\n"
+        "OPERAÇÕES DISPONÍVEIS:\n\n"
+        "  SEARCH <termo>\n"
+        "  DELETE <nome-do-arquivo>\n"
+        "  DOWNLOAD <ip> <arquivo> [inicio] [fim]\n"
+        "  LEAVE\n\n"
+        "*************************\n"
+        "Digite o comando:"
+    ).strip()
+
+    if cmd.startswith("SEARCH"):
+        parts = cmd.split(maxsplit=1)
+        if len(parts) == 2:
+            search_file_on_server(client_socket, parts[1])
         else:
-            print("Comando não reconhecido. Use: SEARCH, DELETE, DOWNLOAD ou LEAVE.")
+            print("Uso correto: SEARCH <termo>")
+
+    elif cmd.startswith("DELETE"):
+        parts = cmd.split(maxsplit=1)
+        if len(parts) == 2:
+            client_socket.sendall(f"DELETEFILE {parts[1]}\n".encode())
+            print(client_socket.recv(1024).decode().strip())
+        else:
+            print("Uso correto: DELETE <nome-do-arquivo>")
+
+    elif cmd == "LEAVE":
+        client_socket.sendall(b"LEAVE\n")
+        print(client_socket.recv(1024).decode().strip())
+        break
+
+    elif cmd.startswith("DOWNLOAD"):
+        parts = cmd.split()
+        if len(parts) >= 3:
+            ip = parts[1]
+            filename = parts[2]
+            offset_start = int(parts[3]) if len(parts) >= 4 else 0
+            offset_end = int(parts[4]) if len(parts) >= 5 else None
+            download_file(ip, filename, offset_start, offset_end)
+        else:
+            print("Uso correto: DOWNLOAD <ip> <arquivo> [inicio] [fim]")
+
+    else:
+        print("Comando não reconhecido. Use: SEARCH, DELETE, DOWNLOAD ou LEAVE.")
+
