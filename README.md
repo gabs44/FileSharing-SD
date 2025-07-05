@@ -53,10 +53,10 @@ A implementação foi feita utilizando **Python 3**, escolhida por sua simplicid
 
 ## Comandos no cliente
 
-- `search <termo>`: busca arquivos com esse nome
-- `delete <arquivo>`: remove o arquivo da rede (não apaga do disco)
-- `leave`: desconecta do servidor e encerra o cliente
-- `download`: baixa arquivo entre clientes
+- `SEARCH <termo>`: busca arquivos com esse nome
+- `DELETE <arquivo>`: remove o arquivo da rede (não apaga do disco)
+- `LEAVE`: desconecta do servidor e encerra o cliente
+- `DOWNLOAD`: baixa arquivo entre clientes
 
 ## Comunicação entre clientes
 
